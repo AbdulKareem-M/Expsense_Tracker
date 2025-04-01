@@ -23,6 +23,17 @@ class Expense(models.Model):
   
   
   def __str__(self):
-    return '{self.description} - ${self.amount}'
+    return f'{self.description} - ${self.amount}'
   
 
+class Budget(models.Model):
+  user = models.ForeignKey(User, on_delete=models.CASCADE)
+  category = models.ForeignKey(Category, on_delete=models.CASCADE)
+  amount = models.DecimalField(max_digits=10, decimal_places=2)
+  month = models.DateField()  # We'll just use the first day of each month
+    
+  def __str__(self):
+      return f"{self.category.name} - {self.month.strftime('%B %Y')}"
+    
+  class Meta:
+      unique_together = ['user', 'category', 'month']

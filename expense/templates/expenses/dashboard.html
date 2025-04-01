@@ -1,0 +1,156 @@
+{% extends 'expenses/base.html' %}
+
+{% block content %}
+<h2>Expense Dashboard</h2>
+
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card border-primary mb-3">
+            <div class="card-header bg-primary text-white">Total Expenses</div>
+            <div class="card-body">
+                <h3 class="card-title">${{ total_expenses|floatformat:2 }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Expenses by Category</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Monthly Expenses</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="monthlyChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Pass Django data to JavaScript -->
+<script>
+  // Initialize chart data with fallback values
+  var chartData = {
+    categories: [],
+    categoryTotals: [],
+    months: [],
+    monthlyTotals: []
+  };
+
+  try {
+    // Safely parse Django template variables
+    chartData = {
+      categories: JSON.parse('{% if categories_json %}{{ categories_json|safe }}{% else %}[]{% endif %}'),
+      categoryTotals: JSON.parse('{% if category_totals_json %}{{ category_totals_json|safe }}{% else %}[]{% endif %}'),
+      months: JSON.parse('{% if months_json %}{{ months_json|safe }}{% else %}[]{% endif %}'),
+      monthlyTotals: JSON.parse('{% if monthly_totals_json %}{{ monthly_totals_json|safe }}{% else %}[]{% endif %}')
+    };
+  } catch (error) {
+    console.error('Error parsing chart data:', error);
+  }
+
+  // Verify data integrity
+  if (!Array.isArray(chartData.categories) || !Array.isArray(chartData.categoryTotals)) {
+    console.error('Invalid or missing category data');
+    chartData.categories = [];
+    chartData.categoryTotals = [];
+  }
+
+  if (!Array.isArray(chartData.months) || !Array.isArray(chartData.monthlyTotals)) {
+    console.error('Invalid or missing monthly data');
+    chartData.months = [];
+    chartData.monthlyTotals = [];
+  }
+</script>
+
+<script>
+    // Chart.js configuration
+    document.addEventListener('DOMContentLoaded', function() {
+        try {
+            // Category pie chart
+            var categoryCtx = document.getElementById('categoryChart').getContext('2d');
+            
+            new Chart(categoryCtx, {
+                type: 'pie',
+                data: {
+                    labels: chartData.categories,
+                    datasets: [{
+                        data: chartData.categoryTotals,
+                        backgroundColor: [
+                            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40',
+                            '#8C564B', '#E377C2', '#7F7F7F', '#BCBD22'
+                        ],
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Expenses by Category'
+                        }
+                    }
+                }
+            });
+            
+            // Monthly bar chart
+            var monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+            
+            new Chart(monthlyCtx, {
+                type: 'bar',
+                data: {
+                    labels: chartData.months,
+                    datasets: [{
+                        label: 'Monthly Expenses',
+                        data: chartData.monthlyTotals,
+                        backgroundColor: '#36A2EB',
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Amount ($)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Month'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Monthly Expense Trend'
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error("Error creating charts:", error);
+        }
+    });
+</script>
+{% endblock %}

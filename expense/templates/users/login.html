@@ -6,8 +6,10 @@
   <title>login</title>
 </head>
 <body>
-  {%csrf_token%}
-  {{form.as_p}}
-  <button type="submit">Login</button>
+  <form action="" method="post">
+    {%csrf_token%}
+    {{form.as_p}}
+    <button type="submit">Login</button>
+  </form>
 </body>
 </html>

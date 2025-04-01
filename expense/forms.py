@@ -1,5 +1,6 @@
 from django import forms
-from .models import Category, Expense
+from .models import Category, Expense, Budget
+import datetime
 
 
 class ExpenseForm(forms.ModelForm):
@@ -30,3 +31,8 @@ class LoginForm(forms.Form):
   
   password = forms.CharField(widget=forms.PasswordInput(attrs={'class':'form-control', 'placeholder':'enter password'}))
   
+  
+class BudgetForm(forms.ModelForm):
+    class Meta:
+        model = Budget
+        fields = ['category', 'amount', 'month']

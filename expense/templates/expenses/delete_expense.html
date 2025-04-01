@@ -1,0 +1,8 @@
+{% extends 'expenses/base.html'%}
+{%block content%}
+<p>You are about to delete {{object}}. This cannot be undone</p>
+<form action="" method="post">
+  <button class="btn btn-danger" type="submit">Delete</button>
+</form>
+<a href="{% url 'expense_list' %}" class="btn btn-primary">Cancel</a>
+{%endblock%}

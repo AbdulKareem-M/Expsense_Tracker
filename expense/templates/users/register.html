@@ -6,8 +6,10 @@
   <title>register</title>
 </head>
 <body>
-  {%csrf_token%}
-  {{form.as_p}}
-  <button type="submit">Register</button>
+  <form action="" method="post">
+    {%csrf_token%}
+    {{form.as_p}}
+    <button type="submit">Register</button>
+  </form>
 </body>
 </html>
