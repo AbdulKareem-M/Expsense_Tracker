@@ -14,7 +14,7 @@
           <th>Category</th>
           <th>Description</th>
           <th>Amount</th>
-          <th>Action</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -24,7 +24,10 @@
           <td>{{ expense.category.name }}</td>
           <td>{{ expense.description }}</td>
           <td>${{ expense.amount }}</td>
-          <td><a href="{%url 'delete_expense' expense.id %}" class="btn btn-danger">Delete</a></td>
+          <td>
+            <a href="{%url 'update_expense' expense.id %}" class="btn btn-primary">Edit</a>
+            <a href="{%url 'delete_expense' expense.id %}" class="btn btn-danger">Delete</a>
+          </td>
         </tr>
         {% endfor %}
       </tbody>
@@ -32,18 +35,6 @@
     {% else %}
     <p>You don't have any expenses yet.</p>
     {% endif %}
-  </div>
-
-  <div class="col-md-4">
-    <div class="card">
-      <div class="card-header">
-        <h5>Summary</h5>
-      </div>
-      <div class="card-body">
-        <p>Total Expenses: ${{ expenses.total }}</p>
-        <!-- More summary stats will go here -->
-      </div>
-    </div>
   </div>
 </div>
 {% endblock %}

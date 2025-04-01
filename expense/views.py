@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from .models import Expense, Category, Budget
 from . forms import ExpenseForm, UserForm, LoginForm, BudgetForm
 from django.contrib import messages
-from django.views.generic import View, DeleteView
+from django.views.generic import View, DeleteView, UpdateView
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
@@ -204,3 +204,23 @@ class DeleteExpense(DeleteView):
   model = Expense
   template_name = 'expenses/delete_expense.html'
   success_url = reverse_lazy('expense_list')
+
+
+class UpdateExpense(UpdateView):
+  model = Expense
+  form_class = ExpenseForm
+  template_name = 'expenses/update_expense.html'
+  success_url = reverse_lazy('expense_list')
+  
+
+class DeleteBudget(DeleteView):
+  model = Budget
+  template_name = 'expenses/delete_budget.html'
+  success_url = reverse_lazy('budget_list')
+
+
+class UpdateBudget(UpdateView):
+  model = Budget
+  fields = ['category','amount','month']
+  template_name = 'expenses/update_budget.html'
+  success_url = reverse_lazy('budget_list')
