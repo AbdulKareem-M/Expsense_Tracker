@@ -22,9 +22,4 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('expense.urls')),
     
-    #user
-    path('register/',views.Registerview.as_view(),name='register'),
-    path('login/',views.LoginView.as_view(),name='login'),
-    path('logout/',views.logout,name='logout'),
-    path('profile/',views.profile,name='profile'),
 ]

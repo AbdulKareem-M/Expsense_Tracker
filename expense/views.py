@@ -6,15 +6,14 @@ from django.views.generic import View, DeleteView, UpdateView
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Sum
 from django.db.models.functions import TruncMonth
 import json
 from datetime import datetime
 from django.urls import reverse_lazy
 
-@login_required
-def profile(request):
-    return render(request, 'users/profile.html')
+
 class Registerview(View):
   
   def get(self, request):
@@ -66,47 +65,22 @@ class LoginView(View):
         
         return render(request, 'users/login.html', {'form':form})
 
+
 def logout(request):
   logout(request)
   return redirect('logout')
 
 @login_required
-def expense_list(request):
-  expenses = Expense.objects.filter(user=request.user).order_by('-date')
-  categories = Category.objects.all()
-  
-  return render(request, 'expenses/expense_list.html',{'expenses':expenses, 'category':categories})
-
+def profile(request):
+    return render(request, 'users/profile.html')
 
 @login_required
-def add_expense(request):
-  if request.method == 'POST':
-    form = ExpenseForm(request.POST)
-    if form.is_valid():
-      expense = form.save(commit=False)
-      expense.user = request.user
-      expense.save()
-
-      # Debit the budget for the same category
-      category = expense.category
-      budget = Budget.objects.filter(user=request.user, category=category).first()
-
-      if budget:
-        # Debit the budget
-        if budget.amount >= expense.amount:
-          budget.amount -= expense.amount
-          budget.save()
-          messages.success(request, 'Expense added and budget debited successfully!')
-        else:
-          messages.error(request, 'Not enough budget for this expense.')
-      else:
-        messages.warning(request, 'No budget found for this category.')
-
-        return redirect('expense_list')
-  else:
-    form = ExpenseForm()
-  return render(request, 'expenses/add_expense.html', {'form': form})
-
+def expense_list(request):
+  expenses = Expense.objects.filter(user=request.user).order_by('-date')
+  total_expenses = expenses.aggregate(Sum('amount'))['amount__sum'] or 0
+  categories = Category.objects.all()
+  
+  return render(request, 'expenses/expense_list.html',{'expenses':expenses, 'category':categories, 'total_expenses':total_expenses})
 
 @login_required
 def dashboard(request):
@@ -145,9 +119,48 @@ def dashboard(request):
   return render(request, 'expenses/dashboard.html', context)
 
 @login_required
-def budget_list(request):
-    budgets = Budget.objects.filter(user=request.user).order_by('-month')
-    return render(request, 'expenses/budget_list.html', {'budgets': budgets})
+def add_expense(request):
+  if request.method == 'POST':
+    form = ExpenseForm(request.POST)
+    if form.is_valid():
+      expense = form.save(commit=False)
+      expense.user = request.user
+      expense.save()
+
+      # Debit the budget for the same category
+      category = expense.category
+      budget = Budget.objects.filter(user=request.user, category=category).first()
+
+      if budget:
+        # Debit the budget
+        if budget.amount >= expense.amount:
+          budget.amount -= expense.amount
+          budget.save()
+          messages.success(request, 'Expense added and budget debited successfully!')
+        else:
+          messages.error(request, 'Not enough budget for this expense.')
+      else:
+        messages.warning(request, 'No budget found for this category.')
+
+        return redirect('expense_list')
+  else:
+    form = ExpenseForm()
+  return render(request, 'expenses/add_expense.html', {'form': form})
+
+
+class DeleteExpense(DeleteView, LoginRequiredMixin):
+  model = Expense
+  template_name = 'expenses/delete_expense.html'
+  success_url = reverse_lazy('expense_list')
+
+
+class UpdateExpense(UpdateView, LoginRequiredMixin):
+  model = Expense
+  form_class = ExpenseForm
+  template_name = 'expenses/update_expense.html'
+  success_url = reverse_lazy('expense_list')
+  
+
 
 @login_required
 def add_budget(request):
@@ -180,7 +193,8 @@ def add_budget(request):
     else:
         form = BudgetForm()
 
-    return render(request, 'expenses/add_budget.html', {'form': form})
+    return render(request, 'budgets/add_budget.html', {'form': form})
+
 
 @login_required
 def budget_list(request):
@@ -197,30 +211,17 @@ def budget_list(request):
         else:
             budget.progress = 0
 
-    return render(request, 'expenses/budget_list.html', {'budgets': budgets})
+    return render(request, 'budgets/budget_list.html', {'budgets': budgets})
 
 
-class DeleteExpense(DeleteView):
-  model = Expense
-  template_name = 'expenses/delete_expense.html'
-  success_url = reverse_lazy('expense_list')
-
-
-class UpdateExpense(UpdateView):
-  model = Expense
-  form_class = ExpenseForm
-  template_name = 'expenses/update_expense.html'
-  success_url = reverse_lazy('expense_list')
-  
-
-class DeleteBudget(DeleteView):
+class DeleteBudget(DeleteView, LoginRequiredMixin):
   model = Budget
-  template_name = 'expenses/delete_budget.html'
+  template_name = 'budgets/delete_budget.html'
   success_url = reverse_lazy('budget_list')
 
 
-class UpdateBudget(UpdateView):
+class UpdateBudget(UpdateView, LoginRequiredMixin):
   model = Budget
-  fields = ['category','amount','month']
-  template_name = 'expenses/update_budget.html'
+  fields = ['amount']
+  template_name = 'budgets/update_budget.html'
   success_url = reverse_lazy('budget_list')
