@@ -12,10 +12,10 @@ The **Expense Tracker** is a web application built using **Django** that helps u
 
 ## Screenshots
 ### Login Page
-![Login Page](screenshots\login.png)
+![Login Page](screenshots/login.png)
 
 ### Dashboard
-![Dashboard](screenhsots/dashboard.png)
+![Dashboard](screenshots/dashboard.png)
 
 ### Expense Management
 ![Expense Management](screenshots/expense_list.png)
