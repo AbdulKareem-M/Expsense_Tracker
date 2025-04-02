@@ -5,7 +5,7 @@ urlpatterns = [
     #user
     path('register/',views.Registerview.as_view(),name='register'),
     path('login/',views.LoginView.as_view(),name='login'),
-    path('logout/',views.logout,name='logout'),
+    path('logout/',views.logout_view,name='logout'),
     path('profile/',views.profile,name='profile'),
     
     #expenses

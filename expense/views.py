@@ -66,101 +66,13 @@ class LoginView(View):
         return render(request, 'users/login.html', {'form':form})
 
 
-def logout(request):
+def logout_view(request):
   logout(request)
-  return redirect('logout')
+  return redirect('login')
 
 @login_required
 def profile(request):
     return render(request, 'users/profile.html')
-
-@login_required
-def expense_list(request):
-  expenses = Expense.objects.filter(user=request.user).order_by('-date')
-  total_expenses = expenses.aggregate(Sum('amount'))['amount__sum'] or 0
-  categories = Category.objects.all()
-  
-  return render(request, 'expenses/expense_list.html',{'expenses':expenses, 'category':categories, 'total_expenses':total_expenses})
-
-@login_required
-def dashboard(request):
-  # Get all expenses for the current user
-  expenses = Expense.objects.filter(user=request.user)
-    
-  # Total expenses
-  total_expenses = expenses.aggregate(Sum('amount'))['amount__sum'] or 0
-    
-  # Expenses by category
-  expenses_by_category = list(expenses.values('category__name').annotate(total=Sum('amount')).order_by('-total'))
-    
-  # Expenses by month
-  current_year = datetime.now().year
-  expenses_by_month = list(expenses.filter(date__year=current_year)
-                          .annotate(month=TruncMonth('date'))
-                          .values('month')
-                          .annotate(total=Sum('amount'))
-                          .order_by('month'))
-    
-  # Convert QuerySet to format suitable for Chart.js
-  categories = [item['category__name'] for item in expenses_by_category]
-  category_totals = [float(item['total']) for item in expenses_by_category]
-    
-  months = [item['month'].strftime('%B') for item in expenses_by_month]
-  monthly_totals = [float(item['total']) for item in expenses_by_month]
-    
-  context = {
-      'total_expenses': total_expenses,
-      'categories_json': json.dumps(categories),
-      'category_totals_json': json.dumps(category_totals),
-      'months_json': json.dumps(months),
-      'monthly_totals_json': json.dumps(monthly_totals),
-  }
-  
-  return render(request, 'expenses/dashboard.html', context)
-
-@login_required
-def add_expense(request):
-  if request.method == 'POST':
-    form = ExpenseForm(request.POST)
-    if form.is_valid():
-      expense = form.save(commit=False)
-      expense.user = request.user
-      expense.save()
-
-      # Debit the budget for the same category
-      category = expense.category
-      budget = Budget.objects.filter(user=request.user, category=category).first()
-
-      if budget:
-        # Debit the budget
-        if budget.amount >= expense.amount:
-          budget.amount -= expense.amount
-          budget.save()
-          messages.success(request, 'Expense added and budget debited successfully!')
-        else:
-          messages.error(request, 'Not enough budget for this expense.')
-      else:
-        messages.warning(request, 'No budget found for this category.')
-
-        return redirect('expense_list')
-  else:
-    form = ExpenseForm()
-  return render(request, 'expenses/add_expense.html', {'form': form})
-
-
-class DeleteExpense(DeleteView, LoginRequiredMixin):
-  model = Expense
-  template_name = 'expenses/delete_expense.html'
-  success_url = reverse_lazy('expense_list')
-
-
-class UpdateExpense(UpdateView, LoginRequiredMixin):
-  model = Expense
-  form_class = ExpenseForm
-  template_name = 'expenses/update_expense.html'
-  success_url = reverse_lazy('expense_list')
-  
-
 
 @login_required
 def add_budget(request):
@@ -225,3 +137,90 @@ class UpdateBudget(UpdateView, LoginRequiredMixin):
   fields = ['amount']
   template_name = 'budgets/update_budget.html'
   success_url = reverse_lazy('budget_list')
+
+@login_required
+def expense_list(request):
+  expenses = Expense.objects.filter(user=request.user).order_by('-date')
+  total_expenses = expenses.aggregate(Sum('amount'))['amount__sum'] or 0
+  categories = Category.objects.all()
+  
+  return render(request, 'expenses/expense_list.html',{'expenses':expenses, 'category':categories, 'total_expenses':total_expenses})
+
+@login_required
+def add_expense(request):
+  if request.method == 'POST':
+    form = ExpenseForm(request.POST)
+    if form.is_valid():
+      expense = form.save(commit=False)
+      expense.user = request.user
+      expense.save()
+
+      # Debit the budget for the same category
+      category = expense.category
+      budget = Budget.objects.filter(user=request.user, category=category).first()
+
+      if budget:
+        # Debit the budget
+        if budget.amount >= expense.amount:
+          budget.amount -= expense.amount
+          budget.save()
+          messages.success(request, 'Expense added and budget debited successfully!')
+        else:
+          messages.error(request, 'Not enough budget for this expense.')
+      else:
+        messages.warning(request, 'No budget found for this category.')
+
+      return redirect('expense_list')
+  else:
+    form = ExpenseForm()
+  return render(request, 'expenses/add_expense.html', {'form': form})
+
+
+class DeleteExpense(DeleteView, LoginRequiredMixin):
+  model = Expense
+  template_name = 'expenses/delete_expense.html'
+  success_url = reverse_lazy('expense_list')
+
+
+class UpdateExpense(UpdateView, LoginRequiredMixin):
+  model = Expense
+  form_class = ExpenseForm
+  template_name = 'expenses/update_expense.html'
+  success_url = reverse_lazy('expense_list')
+
+
+@login_required
+def dashboard(request):
+  # Get all expenses for the current user
+  expenses = Expense.objects.filter(user=request.user)
+    
+  # Total expenses
+  total_expenses = expenses.aggregate(Sum('amount'))['amount__sum'] or 0
+    
+  # Expenses by category
+  expenses_by_category = list(expenses.values('category__name').annotate(total=Sum('amount')).order_by('-total'))
+    
+  # Expenses by month
+  current_year = datetime.now().year
+  expenses_by_month = list(expenses.filter(date__year=current_year)
+                          .annotate(month=TruncMonth('date'))
+                          .values('month')
+                          .annotate(total=Sum('amount'))
+                          .order_by('month'))
+    
+  # Convert QuerySet to format suitable for Chart.js
+  categories = [item['category__name'] for item in expenses_by_category]
+  category_totals = [float(item['total']) for item in expenses_by_category]
+    
+  months = [item['month'].strftime('%B') for item in expenses_by_month]
+  monthly_totals = [float(item['total']) for item in expenses_by_month]
+    
+  context = {
+      'total_expenses': total_expenses,
+      'categories_json': json.dumps(categories),
+      'category_totals_json': json.dumps(category_totals),
+      'months_json': json.dumps(months),
+      'monthly_totals_json': json.dumps(monthly_totals),
+  }
+  
+  return render(request, 'expenses/dashboard.html', context)
